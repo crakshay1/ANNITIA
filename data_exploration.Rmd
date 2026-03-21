@@ -1,0 +1,17 @@
+---
+title: "Annitia_data_exploration"
+author: "Georgy Zaouk"
+date: "2026-03-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Load data
+```{r}
+
+```
+
