@@ -8,5 +8,6 @@ For these feature we have 12 versions
 - find a way to make use of the evolution of the different variables
 
 ## How to make use of this evolution
-- maybe create a score
-- ...?
+- maybe create a score putting more weight on more recent tests
+- or that takes into account the difference between two tests
+
