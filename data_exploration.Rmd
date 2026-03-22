@@ -9,9 +9,169 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Imports
+```{r message=FALSE, warning=FALSE}
 
-## Load data
-```{r}
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(ggplot2)
 
 ```
+
+# Load data
+```{r}
+
+train_data = read.csv("Train_dataset.csv")
+test_data = read.csv("Test_dataset.csv")
+
+```
+
+# Train dataset
+```{r}
+
+summary(train_data$evenements_hepatiques_majeurs)
+summary(train_data$death)
+
+```
+
+## Output Class distribution
+```{r}
+
+counts1 <- table(train_data$evenements_hepatiques_majeurs)
+
+barplot(
+  counts,
+  main = "Class distribution",
+  xlab = "Evenements Hepatiques Majeurs",
+  ylab = "Count"
+)
+
+counts2 <- table(train_data$death)
+
+barplot(
+  counts,
+  main = "Class distribution",
+  xlab = "Death",
+  ylab = "Count"
+)
+
+```
+
+## Evolving features
+### Identify all evolving features
+```{r}
+
+v_cols <- grep("_v[0-9]+$", names(train_data), value = TRUE)
+
+base_features <- v_cols %>%
+  str_remove("_v[0-9]+$") %>%
+  unique() %>%
+  sort()
+
+base_features
+length(base_features)
+
+```
+
+### Reshape evolving features into long data
+```{r}
+
+long_data <- train_data %>%
+  pivot_longer(
+    cols = matches("_v[0-9]+$"),
+    names_to = c("feature", "visit"),
+    names_pattern = "^(.*)_v([0-9]+)$",
+    values_to = "value"
+  ) %>%
+  mutate(visit = as.integer(visit))
+
+```
+
+### Summarize evolution into a table
+```{r}
+
+feature_summary <- long_data %>%
+  group_by(feature, visit) %>%
+  summarise(
+    n_obs = sum(!is.na(value)),
+    missing_rate = mean(is.na(value)),
+    mean_value = mean(value, na.rm = TRUE),
+    median_value = median(value, na.rm = TRUE),
+    sd_value = sd(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+print(feature_summary)
+
+```
+
+### Plot the features
+```{r}
+
+ggplot(feature_summary, aes(x = visit, y = mean_value)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~ feature, scales = "free_y") +
+  labs(
+    title = "Mean trajectories over visits",
+    x = "Visit",
+    y = "Mean value"
+  ) +
+  theme_minimal()
+
+```
+
+### Compare trajectories by outcome
+#### Evenement Hepatiques Majeurs
+```{r}
+
+feature_by_outcome <- long_data %>%
+  group_by(feature, visit, evenements_hepatiques_majeurs) %>%
+  summarise(
+    mean_value = mean(value, na.rm = TRUE),
+    n_obs = sum(!is.na(value)),
+    .groups = "drop"
+  )
+
+ggplot(feature_by_outcome, aes(x = visit, y = mean_value, color = as.factor(evenements_hepatiques_majeurs))) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~ feature, scales = "free_y") +
+  labs(
+    title = "Feature trajectories by outcome",
+    x = "Visit",
+    y = "Mean value",
+    color = "evenements_hepatiques_majeurs"
+  ) +
+  theme_minimal()
+
+```
+
+#### Death
+```{r}
+
+feature_by_outcome <- long_data %>%
+  group_by(feature, visit, death) %>%
+  summarise(
+    mean_value = mean(value, na.rm = TRUE),
+    n_obs = sum(!is.na(value)),
+    .groups = "drop"
+  )
+
+ggplot(feature_by_outcome, aes(x = visit, y = mean_value, color = as.factor(death))) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~ feature, scales = "free_y") +
+  labs(
+    title = "Feature trajectories by outcome",
+    x = "Visit",
+    y = "Mean value",
+    color = "death"
+  ) +
+  theme_minimal()
+
+```
+
+
 
